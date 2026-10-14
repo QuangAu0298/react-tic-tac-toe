@@ -22,7 +22,7 @@ function Board({xIsNext, squares, onPlay}) {
     onPlay(nxtSq)
 
   }
-  // if current player is found to be O, make best move
+  
   function makeAutoMove() {
     let automove = null;
     if (xIsNext) {
@@ -93,10 +93,6 @@ export default function Game() {
     setcurrentMove(0);
   }
 
-  function makeAutoMove() {
-
-  }
-
 
   const moves = history.map((squares, move) => {
     let description;
@@ -137,42 +133,68 @@ function calculateWinner(squares) {
   return null;
 }
 
-function findBestMove(squares, playermove) {
-  const WINNINGLINES = [
+const WINNINGLINES = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8],
     [0, 3, 6], [1, 4, 7], [2, 5, 8],
     [0, 4, 8], [2, 4, 6],
   ];
-  function findWinningSquare(playermove) {
-    for (const combo of WINNINGLINES) {
-      const [a, b, c] = combo;
-      const line = [squares[a], squares[b], squares[c]];
-      const playerinline = line.filter((move) => move === playermove).length;
-      const emptyinline = line.filter((move) => move === ' ').length;
 
-      if (playerinline === 2 && emptyinline == 1) {
-        if (squares[a] === ' ') return a;
-        if (squares[b] === ' ') return b;
-        if (squares[c] === ' ') return c;
+function checkWinner(board, player) {
+  return WINNINGLINES.some((combo) => 
+    combo.every((index) => board[index] === player)
+  );
+}
+
+function findBestMove(squares, playermove) {
+
+  let bestScore = -Infinity;
+  let move = -1;
+  let enemymove = playermove === 'X' ? 'O' : 'X';
+  const squaresCopy = squares.slice();
+  for (let i = 0; i < squaresCopy.length; i++) {
+    if (squaresCopy[i] === ' ') {
+      squaresCopy[i] = playermove;
+      let score = minimax(squaresCopy, 0, false, playermove, enemymove);
+      squaresCopy[i] = ' ';
+
+      if (score > bestScore) {
+        bestScore = score;
+        move = i
+      }
+      //console.log("choice ", i, " has score", score);
+    }
+  }
+  return move;
+}
+
+function minimax(board, depth, isMaximizing, player, enemy) {
+  if (checkWinner(board, player)) return 10 - depth;
+  if (checkWinner(board, enemy)) return depth - 10;
+  if (board.every((cell) => cell !== ' ')) return 0;
+
+  if (isMaximizing) {
+    let maxScore = -Infinity;
+    for (let i = 0; i < board.length; i++) {
+      if (board[i] === ' ') {
+        board[i] = player;
+        let score = minimax(board, depth + 1, false, player, enemy);
+        board[i] = ' ';
+        maxScore = Math.max(score, maxScore);
+        // console.log(score);
       }
     }
-    return null;
-  }
-  let enemymove = 'X';
-  if (playermove === "X") {
-    enemymove = 'O';
-  }
-  // block enemy win
-  let bestMove = findWinningSquare(enemymove);
-  if (bestMove !== null) return bestMove;
-  // get winning move
-  bestMove = findWinningSquare(playermove);
-  if (bestMove !== null) return bestMove;
-  // look for next best free space
-  for (const i of [4, 0, 2, 6, 8, 1, 3, 5, 7]) {
-    if (squares[i] === ' ') {
-      return i;
+    return maxScore;
+  } else {
+    let minScore = Infinity;
+    for (let i = 0; i < board.length; i++) {
+      if (board[i] === ' ') {
+        board[i] = enemy;
+        let score = minimax(board, depth + 1, true, player, enemy);
+        board[i] = ' ';
+        minScore = Math.min(score, minScore);
+        // console.log(score);
+      }
     }
+    return minScore;
   }
-  return null;
 }
