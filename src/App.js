@@ -170,8 +170,16 @@ function calculateWinnerNxM(grid, cols, rows) {
   // check for all rows
   for (let r = 0; r < rows; r++) {
     let rowCheck = grid.slice(r * cols, (r * cols) + cols)
-    if (rowCheck.every((slot) => slot === 'X')) return 'X';
-    if (rowCheck.every((slot) => slot === 'O')) return 'O';
+    if (cols > rows) {
+      for (let i = 0; i < cols-rows +1; i++) {
+        if (rowCheck.slice(i, i + rows).every((slot) => slot === 'X')) return 'X';
+        if (rowCheck.slice(i, i + rows).every((slot) => slot === 'O')) return 'O';
+      }
+    } else {
+      if (rowCheck.every((slot) => slot === 'X')) return 'X';
+      if (rowCheck.every((slot) => slot === 'O')) return 'O';
+    }
+    
   }
   // check all columns
   for (let c = 0; c < cols; c++) {
@@ -179,8 +187,15 @@ function calculateWinnerNxM(grid, cols, rows) {
     for (let r = 0; r < rows; r++) {
       colCheck.push(grid[(r *cols) + c])
     }
-    if (colCheck.every((slot) => slot === 'X')) return 'X';
-    if (colCheck.every((slot) => slot === 'O')) return 'O';
+    if (rows > cols) {
+      for (let i = 0; i < rows-cols +1; i++) {
+        if (colCheck.slice(i, i + cols).every((slot) => slot === 'X')) return 'X';
+        if (colCheck.slice(i, i + cols).every((slot) => slot === 'O')) return 'O';
+      }
+    } else {
+      if (colCheck.every((slot) => slot === 'X')) return 'X';
+      if (colCheck.every((slot) => slot === 'O')) return 'O';
+    }
   }
 
   // check horizontal diagonals
