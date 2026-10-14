@@ -13,15 +13,26 @@ function Board({xIsNext, squares, onPlay}) {
       return;
     }
     
-    const nxtSq = squares.slice();
+    let nxtSq = squares.slice();
+    let moveTarget = "O";
     if (xIsNext) {
-      nxtSq[i] = "X";
-    } else {
-      nxtSq[i] = "O";
+      moveTarget = "X";
     }
+    nxtSq[i] = moveTarget;
     onPlay(nxtSq)
+
+  }
+  // if current player is found to be O, make best move
+  if (!xIsNext) {
+    console.log("O is playing")
+    let automove = findBestMove(squares, 'O');
+    if (automove !== null) {
+      handleClick(automove);
+    }
+    console.log("O makes move at ", automove);
   }
   
+
   const victor = calculateWinner(squares);
   let status;
   if (victor) {
@@ -62,6 +73,7 @@ export default function Game() {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
     setHistory(nextHistory);
     setcurrentMove(nextHistory.length - 1);
+    
   }
 
   function jumpTo(nextMove) {
@@ -101,27 +113,51 @@ export default function Game() {
 
 
 function calculateWinner(squares) {
-  // const lines = [
-  //   [0, 1, 2],
-  //   [3, 4, 5],
-  //   [6, 7, 8],
-  //   [0, 3, 6],
-  //   [1, 4, 7],
-  //   [2, 5, 8],
-  //   [0, 4, 8],
-  //   [2, 4, 6]
-  // ];
   const re = /^(?:(?:...){0,2}([OX])\1\1|.{0,2}([OX])..\2..\2|([OX])...\3...\3|..([OX]).\4.\4)/g;
   const currentGame = squares.join("");
   const matching = re.exec(currentGame)
-  // for (let i = 0; i < lines.length; i++) {
-  //   const [a, b, c] = lines[i];
-  //   if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-  //     return squares[a];
-  //   }
-  // }
   if (matching) {
     return matching.slice(1).find(group => group !== undefined);
+  }
+  return null;
+}
+
+function findBestMove(squares, playermove) {
+  const WINNINGLINES = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6],
+  ];
+  function findWinningSquare(playermove) {
+    for (const combo of WINNINGLINES) {
+      const [a, b, c] = combo;
+      const line = [squares[a], squares[b], squares[c]];
+      const playerinline = line.filter((move) => move === playermove).length;
+      const emptyinline = line.filter((move) => move === ' ').length;
+
+      if (playerinline === 2 && emptyinline == 1) {
+        if (squares[a] === ' ') return a;
+        if (squares[b] === ' ') return b;
+        if (squares[c] === ' ') return c;
+      }
+    }
+    return null;
+  }
+  let enemymove = 'X';
+  if (playermove === "X") {
+    enemymove = 'O';
+  }
+  // block enemy win
+  let bestMove = findWinningSquare(enemymove);
+  if (bestMove !== null) return bestMove;
+  // get winning move
+  bestMove = findWinningSquare(playermove);
+  if (bestMove !== null) return bestMove;
+  // look for next best free space
+  for (const i of [4, 0, 2, 6, 8, 1, 3, 5, 7]) {
+    if (squares[i] === ' ') {
+      return i;
+    }
   }
   return null;
 }
