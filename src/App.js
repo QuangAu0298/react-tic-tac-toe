@@ -7,7 +7,7 @@ function Square({ value, onSquareClick}) {
   </button>);
 }
 
-function Board({xIsNext, squares, onPlay}) {
+function Board({xIsNext, squares, onPlay, boardSize}) {
   function handleClick(i) {
     if (squares[i] !== ' ' || calculateWinner(squares)) {
       return;
@@ -49,10 +49,10 @@ function Board({xIsNext, squares, onPlay}) {
   }
 
   const table = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < boardSize[1]; i++) {
     let row = [];
-    for (let j = 0; j < 3; j++) {
-      let idx = 3 * i + j;
+    for (let j = 0; j < boardSize[0]; j++) {
+      let idx = boardSize[0] * i + j;
       row.push(<Square key={idx} value={squares[idx]} onSquareClick={() => handleClick(idx)} />)
     }
     table.push(
@@ -72,16 +72,17 @@ function Board({xIsNext, squares, onPlay}) {
 
 export default function Game() {
   // const [xIsNext, setXIsNext] = useState(true);
+  
   const [history, setHistory] = useState([Array(9).fill(' ')]);
   const [currentMove, setcurrentMove] = useState(0);
+  const [boardSize, setboardSize] = useState([3,3]);
   const xIsNext = currentMove % 2 === 0;
   const currentSquares = history[currentMove];
   
   function handlePlay(nextSquares) {
     const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
     setHistory(nextHistory);
-    setcurrentMove(nextHistory.length - 1);
-    
+    setcurrentMove(nextHistory.length - 1);  
   }
 
   function jumpTo(nextMove) {
@@ -93,6 +94,19 @@ export default function Game() {
     setcurrentMove(0);
   }
 
+  function updateBoardSize(editingRow, delta) {
+    // [0] = squares in horizontal, [1] = squares in vertical
+    let sizeBuffer = []
+    if (editingRow) {
+      sizeBuffer.push(boardSize[0])
+      sizeBuffer.push(Math.max(boardSize[1] +delta, 3))
+    } else {
+      sizeBuffer.push(Math.max(boardSize[0] +delta, 3))
+      sizeBuffer.push(boardSize[1])
+    } 
+    setboardSize(sizeBuffer)
+    console.log(boardSize)
+  }
 
   const moves = history.map((squares, move) => {
     let description;
@@ -107,10 +121,26 @@ export default function Game() {
       </li>
     );
   })
+
   return (
     <div className="game">
       <div className="game-board">
-        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay}/>
+        
+        <div>
+          <button onClick={() => updateBoardSize(true, 1)}>+</button>
+          <button onClick={() => updateBoardSize(true, -1)}>-</button>
+          Rows {boardSize[1]}
+        </div>
+        <div>
+          <button onClick={() => updateBoardSize(false, 1)}>+</button>
+          <button onClick={() => updateBoardSize(false, -1)}>-</button>
+          Columns {boardSize[0]}
+        </div>
+        
+        <Board xIsNext={xIsNext} 
+          squares={currentSquares} 
+          onPlay={handlePlay}
+          boardSize={boardSize}/>
         <div>
           <button onClick={() => resetGame()}>Reset</button>
         </div>
@@ -146,7 +176,6 @@ function checkWinner(board, player) {
 }
 
 function findBestMove(squares, playermove) {
-
   let bestScore = -Infinity;
   let move = -1;
   let enemymove = playermove === 'X' ? 'O' : 'X';
