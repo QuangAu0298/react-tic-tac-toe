@@ -23,14 +23,21 @@ function Board({xIsNext, squares, onPlay}) {
 
   }
   // if current player is found to be O, make best move
-  if (!xIsNext) {
-    console.log("O is playing")
-    let automove = findBestMove(squares, 'O');
+  function makeAutoMove() {
+    let automove = null;
+    if (xIsNext) {
+      console.log("X is playing")
+      automove = findBestMove(squares, 'X');
+    } else {
+      console.log("O is playing")
+      automove = findBestMove(squares, 'O');
+    }
     if (automove !== null) {
+      console.log("Automove at ", automove);
       handleClick(automove);
     }
-    console.log("O makes move at ", automove);
   }
+  
   
 
   const victor = calculateWinner(squares);
@@ -58,6 +65,7 @@ function Board({xIsNext, squares, onPlay}) {
     <>
       <div className="status">{status}</div>
       {table}
+      <button onClick={makeAutoMove}>Switch to Player {(xIsNext ? "O" : "X")}</button>
     </>
   );
 }
@@ -85,6 +93,11 @@ export default function Game() {
     setcurrentMove(0);
   }
 
+  function makeAutoMove() {
+
+  }
+
+
   const moves = history.map((squares, move) => {
     let description;
     if (move > 0) {
@@ -102,7 +115,9 @@ export default function Game() {
     <div className="game">
       <div className="game-board">
         <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay}/>
-        <button onClick={() => resetGame()}>Reset</button>
+        <div>
+          <button onClick={() => resetGame()}>Reset</button>
+        </div>
       </div>
       <div className="game-info">
         <ol>{moves}</ol>
