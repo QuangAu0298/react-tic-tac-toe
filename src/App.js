@@ -9,7 +9,7 @@ function Square({ value, onSquareClick}) {
 
 function Board({xIsNext, squares, onPlay, boardSize}) {
   function handleClick(i) {
-    if (squares[i] !== ' ' || calculateWinner(squares)) {
+    if (squares[i] !== ' ' || calculateWinnerNxM(squares, boardSize[0], boardSize[1])) {
       return;
     }
     
@@ -40,7 +40,7 @@ function Board({xIsNext, squares, onPlay, boardSize}) {
   
   
 
-  const victor = calculateWinner(squares);
+  const victor = calculateWinnerNxM(squares, boardSize[0], boardSize[1]);
   let status;
   if (victor) {
     status = "Victor: " + victor;
@@ -71,12 +71,11 @@ function Board({xIsNext, squares, onPlay, boardSize}) {
 }
 
 export default function Game() {
-  // const [xIsNext, setXIsNext] = useState(true);
-  
+  const [boardSize, setboardSize] = useState([3,3]);
   const [history, setHistory] = useState([Array(9).fill(' ')]);
   const [currentMove, setcurrentMove] = useState(0);
-  const [boardSize, setboardSize] = useState([3,3]);
   const xIsNext = currentMove % 2 === 0;
+  const currentSize = [3,3];
   const currentSquares = history[currentMove];
   
   function handlePlay(nextSquares) {
@@ -90,7 +89,7 @@ export default function Game() {
   }
 
   function resetGame() {
-    setHistory([Array(9).fill(' ')])
+    setHistory([Array(boardSize[0] * boardSize[1]).fill(' ')])
     setcurrentMove(0);
   }
 
@@ -104,8 +103,11 @@ export default function Game() {
       sizeBuffer.push(Math.max(boardSize[0] +delta, 3))
       sizeBuffer.push(boardSize[1])
     } 
-    setboardSize(sizeBuffer)
-    console.log(boardSize)
+    setboardSize(sizeBuffer);
+    //console.log(currentSquares.length);
+    // forcing a reset 
+    setHistory([Array(sizeBuffer[0] * sizeBuffer[1]).fill(' ')])
+    setcurrentMove(0);
   }
 
   const moves = history.map((squares, move) => {
@@ -136,7 +138,7 @@ export default function Game() {
           <button onClick={() => updateBoardSize(false, -1)}>-</button>
           Columns {boardSize[0]}
         </div>
-        
+
         <Board xIsNext={xIsNext} 
           squares={currentSquares} 
           onPlay={handlePlay}
@@ -162,6 +164,66 @@ function calculateWinner(squares) {
   }
   return null;
 }
+
+function calculateWinnerNxM(grid, cols, rows) {
+  // check for all rows
+  for (let r = 0; r < rows; r++) {
+    let rowCheck = grid.slice(r * cols, (r * cols) + cols)
+    if (rowCheck.every((slot) => slot === 'X')) return 'X';
+    if (rowCheck.every((slot) => slot === 'O')) return 'O';
+  }
+  // check all columns
+  for (let c = 0; c < cols; c++) {
+    let colCheck = []
+    for (let r = 0; r < rows; r++) {
+      colCheck.push(grid[(r *cols) + c])
+    }
+    if (colCheck.every((slot) => slot === 'X')) return 'X';
+    if (colCheck.every((slot) => slot === 'O')) return 'O';
+  }
+
+  // check horizontal diagonals
+  if (cols >= rows) {
+    for (let r = 0; r < cols - rows +1; r++) {
+      let diagCheck = [];
+      for (let d = 0; d < rows; d++) {
+        diagCheck.push(grid[(d *cols) + d + r])
+      }
+      if (diagCheck.every((slot) => slot === 'X')) return 'X';
+      if (diagCheck.every((slot) => slot === 'O')) return 'O';
+    }
+    // reverse diagonals
+    for (let r = 0; r < cols - rows +1; r++) {
+      let diagCheck = [];
+      for (let d = rows-1; d >= 0; d--) {
+        diagCheck.push(grid[(d *cols) + (rows-1 -d) + r])
+      }
+      if (diagCheck.every((slot) => slot === 'X')) return 'X';
+      if (diagCheck.every((slot) => slot === 'O')) return 'O';
+    }
+  } else { // checking diagonals in the vertical direction
+    for (let c = 0; c < rows - cols +1; c++) {
+      let diagCheck = [];
+      for (let d = 0; d < cols; d++) {
+        diagCheck.push(grid[((c + d) *cols) + d])
+      }
+      if (diagCheck.every((slot) => slot === 'X')) return 'X';
+      if (diagCheck.every((slot) => slot === 'O')) return 'O';
+    }
+    // reverse diagonals
+    for (let c = rows-1; c >= rows - cols; c--) {
+      let diagCheck = [];
+      for (let d = 0; d < cols; d++) {
+        diagCheck.push(grid[((c - d) *cols) + d])
+      }
+      if (diagCheck.every((slot) => slot === 'X')) return 'X';
+      if (diagCheck.every((slot) => slot === 'O')) return 'O';
+    }
+  }
+  return null;
+}
+
+
 
 const WINNINGLINES = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8],
