@@ -23,17 +23,18 @@ function Board({xIsNext, squares, onPlay, boardSize}) {
 
   }
   
-  function makeAutoMove() {
+  function makeAutoMove({boardSize}) {
     let automove = null;
     if (xIsNext) {
-      console.log("X is playing")
-      automove = findBestMove(squares, 'X');
+      //console.log("X is playing")
+      automove = findBestMove(squares, 'X', {boardSize});
     } else {
+      //console.log(boardSize);
       console.log("O is playing")
-      automove = findBestMove(squares, 'O');
+      automove = findBestMove(squares, 'O', {boardSize});
     }
     if (automove !== null) {
-      console.log("Automove at ", automove);
+      //console.log("Automove at ", automove);
       handleClick(automove);
     }
   }
@@ -65,7 +66,7 @@ function Board({xIsNext, squares, onPlay, boardSize}) {
     <>
       <div className="status">{status}</div>
       {table}
-      <button onClick={makeAutoMove}>Switch to Player {(xIsNext ? "O" : "X")}</button>
+      <button onClick={() => makeAutoMove({boardSize})}>Switch to Player {(xIsNext ? "O" : "X")}</button>
     </>
   );
 }
@@ -155,15 +156,15 @@ export default function Game() {
 }
 
 
-function calculateWinner(squares) {
-  const re = /^(?:(?:...){0,2}([OX])\1\1|.{0,2}([OX])..\2..\2|([OX])...\3...\3|..([OX]).\4.\4)/g;
-  const currentGame = squares.join("");
-  const matching = re.exec(currentGame)
-  if (matching) {
-    return matching.slice(1).find(group => group !== undefined);
-  }
-  return null;
-}
+// function calculateWinner(squares) {
+//   const re = /^(?:(?:...){0,2}([OX])\1\1|.{0,2}([OX])..\2..\2|([OX])...\3...\3|..([OX]).\4.\4)/g;
+//   const currentGame = squares.join("");
+//   const matching = re.exec(currentGame)
+//   if (matching) {
+//     return matching.slice(1).find(group => group !== undefined);
+//   }
+//   return null;
+// }
 
 function calculateWinnerNxM(grid, cols, rows) {
   // check for all rows
@@ -225,42 +226,44 @@ function calculateWinnerNxM(grid, cols, rows) {
 
 
 
-const WINNINGLINES = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8],
-    [0, 3, 6], [1, 4, 7], [2, 5, 8],
-    [0, 4, 8], [2, 4, 6],
-  ];
+// const WINNINGLINES = [
+//     [0, 1, 2], [3, 4, 5], [6, 7, 8],
+//     [0, 3, 6], [1, 4, 7], [2, 5, 8],
+//     [0, 4, 8], [2, 4, 6],
+//   ];
 
-function checkWinner(board, player) {
-  return WINNINGLINES.some((combo) => 
-    combo.every((index) => board[index] === player)
-  );
-}
+// function checkWinner(board, player) {
+//   return WINNINGLINES.some((combo) => 
+//     combo.every((index) => board[index] === player)
+//   );
+// }
 
-function findBestMove(squares, playermove) {
+function findBestMove(squares, playermove, {boardSize}) {
   let bestScore = -Infinity;
   let move = -1;
-  let enemymove = playermove === 'X' ? 'O' : 'X';
+  const [cols, rows] = boardSize;
   const squaresCopy = squares.slice();
   for (let i = 0; i < squaresCopy.length; i++) {
     if (squaresCopy[i] === ' ') {
       squaresCopy[i] = playermove;
-      let score = minimax(squaresCopy, 0, false, playermove, enemymove);
+      let score = minimax(squaresCopy, 0, false, playermove, cols, rows);
       squaresCopy[i] = ' ';
 
       if (score > bestScore) {
         bestScore = score;
         move = i
       }
-      //console.log("choice ", i, " has score", score);
+      console.log("choice ", i, " has score", score);
     }
   }
   return move;
 }
 
-function minimax(board, depth, isMaximizing, player, enemy) {
-  if (checkWinner(board, player)) return 10 - depth;
-  if (checkWinner(board, enemy)) return depth - 10;
+function minimax(board, depth, isMaximizing, player, cols, rows) {
+  let enemy = player === 'X' ? 'O' : 'X';
+  const winnercheck = calculateWinnerNxM(board, cols, rows);
+  if (winnercheck === player) return (cols *rows) +1 - depth;
+  if (winnercheck === enemy) return depth - ((cols *rows) +1);
   if (board.every((cell) => cell !== ' ')) return 0;
 
   if (isMaximizing) {
@@ -268,10 +271,9 @@ function minimax(board, depth, isMaximizing, player, enemy) {
     for (let i = 0; i < board.length; i++) {
       if (board[i] === ' ') {
         board[i] = player;
-        let score = minimax(board, depth + 1, false, player, enemy);
+        let score = minimax(board, depth + 1, false, player, cols, rows);
         board[i] = ' ';
         maxScore = Math.max(score, maxScore);
-        // console.log(score);
       }
     }
     return maxScore;
@@ -280,10 +282,9 @@ function minimax(board, depth, isMaximizing, player, enemy) {
     for (let i = 0; i < board.length; i++) {
       if (board[i] === ' ') {
         board[i] = enemy;
-        let score = minimax(board, depth + 1, true, player, enemy);
+        let score = minimax(board, depth + 1, true, player, cols, rows);
         board[i] = ' ';
         minScore = Math.min(score, minScore);
-        // console.log(score);
       }
     }
     return minScore;
