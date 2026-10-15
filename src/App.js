@@ -105,10 +105,29 @@ export default function Game() {
       sizeBuffer.push(boardSize[1])
     } 
     setboardSize(sizeBuffer);
-    //console.log(currentSquares.length);
-    // forcing a reset 
-    setHistory([Array(sizeBuffer[0] * sizeBuffer[1]).fill(' ')])
-    setcurrentMove(0);
+    
+    const newBoardGrid = Array(sizeBuffer[0] * sizeBuffer[1]).fill(' ');
+    if (delta > 0) {
+      // increasing space
+      for (let r = 0; r < boardSize[1]; r++) {
+        for (let c = 0; c < boardSize[0]; c++) {
+          let i = boardSize[0] * r + c; // original board index
+          let i2 = sizeBuffer[0] *r + c; // new board's corresponding index
+          newBoardGrid[i2] = currentSquares[i];
+        }
+      }
+    } else {
+      for (let r = 0; r < sizeBuffer[1]; r++) {
+        for (let c = 0; c < sizeBuffer[0]; c++) {
+          let i = boardSize[0] * r + c; // original board index
+          let i2 = sizeBuffer[0] *r + c; // new board's corresponding index
+          newBoardGrid[i2] = currentSquares[i];
+        }
+      }
+    }
+    
+    const newHistory = [...history.slice(0, currentMove), newBoardGrid]; // replacing current board
+    setHistory(newHistory);
   }
 
   const moves = history.map((squares, move) => {
@@ -244,7 +263,7 @@ function findBestMove(squares, playermove, {boardSize}) {
         bestScore = score;
         move = i
       }
-      console.log("choice ", i, " has score", score);
+      // console.log("choice ", i, " has score", score);
     }
   }
   return move;
