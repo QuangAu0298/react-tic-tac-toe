@@ -155,17 +155,6 @@ export default function Game() {
   );
 }
 
-
-// function calculateWinner(squares) {
-//   const re = /^(?:(?:...){0,2}([OX])\1\1|.{0,2}([OX])..\2..\2|([OX])...\3...\3|..([OX]).\4.\4)/g;
-//   const currentGame = squares.join("");
-//   const matching = re.exec(currentGame)
-//   if (matching) {
-//     return matching.slice(1).find(group => group !== undefined);
-//   }
-//   return null;
-// }
-
 function calculateWinnerNxM(grid, cols, rows) {
   // check for all rows
   for (let r = 0; r < rows; r++) {
@@ -240,19 +229,6 @@ function calculateWinnerNxM(grid, cols, rows) {
 }
 
 
-
-// const WINNINGLINES = [
-//     [0, 1, 2], [3, 4, 5], [6, 7, 8],
-//     [0, 3, 6], [1, 4, 7], [2, 5, 8],
-//     [0, 4, 8], [2, 4, 6],
-//   ];
-
-// function checkWinner(board, player) {
-//   return WINNINGLINES.some((combo) => 
-//     combo.every((index) => board[index] === player)
-//   );
-// }
-
 function findBestMove(squares, playermove, {boardSize}) {
   let bestScore = -Infinity;
   let move = -1;
@@ -261,7 +237,7 @@ function findBestMove(squares, playermove, {boardSize}) {
   for (let i = 0; i < squaresCopy.length; i++) {
     if (squaresCopy[i] === ' ') {
       squaresCopy[i] = playermove;
-      let score = minimax(squaresCopy, 0, false, playermove, cols, rows);
+      let score = minimax(squaresCopy, 0, false, playermove, cols, rows, -Infinity, Infinity);
       squaresCopy[i] = ' ';
 
       if (score > bestScore) {
@@ -274,21 +250,27 @@ function findBestMove(squares, playermove, {boardSize}) {
   return move;
 }
 
-function minimax(board, depth, isMaximizing, player, cols, rows) {
+
+// Minimax algorithm takes extremely long to run when more than 9 empty squares are present, 
+// works on empty 3x3 or any grid that has at most 8 empty squares
+function minimax(board, depth, isMaximizing, player, cols, rows, alpha, beta) {
   let enemy = player === 'X' ? 'O' : 'X';
   const winnercheck = calculateWinnerNxM(board, cols, rows);
-  if (winnercheck === player) return (cols *rows) +1 - depth;
-  if (winnercheck === enemy) return depth - ((cols *rows) +1);
+  if (winnercheck === player) return 100 - depth;
+  if (winnercheck === enemy) return depth - 100;
   if (board.every((cell) => cell !== ' ')) return 0;
-
+  if (depth >= 9) return 0; // limiting the depth of search to reduce runtime on empty squares > 9
+  // console.log(depth);
   if (isMaximizing) {
     let maxScore = -Infinity;
     for (let i = 0; i < board.length; i++) {
       if (board[i] === ' ') {
         board[i] = player;
-        let score = minimax(board, depth + 1, false, player, cols, rows);
+        let score = minimax(board, depth + 1, false, player, cols, rows, alpha, beta);
         board[i] = ' ';
         maxScore = Math.max(score, maxScore);
+        alpha = Math.max(alpha, score);
+        if (beta <= alpha) break;
       }
     }
     return maxScore;
@@ -297,9 +279,12 @@ function minimax(board, depth, isMaximizing, player, cols, rows) {
     for (let i = 0; i < board.length; i++) {
       if (board[i] === ' ') {
         board[i] = enemy;
-        let score = minimax(board, depth + 1, true, player, cols, rows);
+        let score = minimax(board, depth + 1, true, player, cols, rows, alpha, beta);
         board[i] = ' ';
         minScore = Math.min(score, minScore);
+        
+        beta = Math.min(beta, score);
+        if (beta <= alpha) break;
       }
     }
     return minScore;
