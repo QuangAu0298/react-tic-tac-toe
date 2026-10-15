@@ -277,8 +277,8 @@ function minimax(board, depth, isMaximizing, player, cols, rows, alpha, beta) {
   const winnercheck = calculateWinnerNxM(board, cols, rows);
   if (winnercheck === player) return 100 - depth;
   if (winnercheck === enemy) return depth - 100;
+  if (depth >= 7) return 0; // limiting the depth of search to reduce runtime on empty squares > 9
   if (board.every((cell) => cell !== ' ')) return 0;
-  if (depth >= 9) return 0; // limiting the depth of search to reduce runtime on empty squares > 9
   // console.log(depth);
   if (isMaximizing) {
     let maxScore = -Infinity;
